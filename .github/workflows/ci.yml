@@ -19,6 +19,21 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: ai_companion
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d ai_companion"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -35,7 +50,7 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Validate migration runner
+      - name: Validate migration scripts
         run: npm run check:migrations
 
       - name: Build
@@ -45,3 +60,9 @@ jobs:
         run: |
           npm run db:generate -- --name ci_schema_check
           git diff --exit-code -- drizzle
+
+      - name: Apply database migrations
+        run: npm run db:migrate
+
+      - name: Smoke-test migrated database
+        run: npm run db:smoke
