@@ -2,7 +2,7 @@
 
 ## Milestone 1: Provider foundation
 
-Status: in progress in the first feature branch.
+Status: **complete**
 
 - Next.js application shell
 - Grok device-code OAuth
@@ -10,45 +10,54 @@ Status: in progress in the first feature branch.
 - Safe ACP connection test
 - Docker packaging
 - CI
-- Architecture and product specification
+- Authentication/deployment ADR
 
-Exit condition: a locally hosted instance can connect, restart, retain the Grok session, disconnect, and complete a tool-free test response.
+Exit condition met: a persistent local instance can connect, retain, test, and disconnect a Grok session without exposing coding-agent tools.
 
 ## Milestone 2: Application identity and storage
 
-- PostgreSQL and Drizzle
-- Better Auth
-- Single-user allowlist
-- CSRF and rate limits
-- Initial migrations
-- Docker Compose database
-- Audit events
+Status: **complete in PR #2**
 
-Exit condition: an authenticated owner can access a private empty dashboard and all data queries are owner-scoped.
+- PostgreSQL
+- Better Auth
+- Single-owner allowlist
+- Protected pages and APIs
+- Official Better Auth migrations
+- Drizzle application migrations
+- Audit events
+- Docker Compose database
+
+Exit condition: the configured owner can complete one-time setup, sign in, and reach a private application shell. All mutable routes validate the owner session.
 
 ## Milestone 3: Companions
 
-- Companion CRUD
-- Guided and advanced prompt editor
-- Prompt versioning
-- Model selection
-- Memory modes
-- Archive and restore
-- Preview conversation
+Status: **complete in PR #2**
 
-Exit condition: two companions produce observably different behavior and each response records the prompt version.
+- Companion create, read, edit, archive, and restore
+- Guided prompt editor
+- Model and response-style settings
+- Memory modes and instructions
+- Immutable prompt versions
+- Prompt-history viewer
+- Optimistic edit conflict detection
+- Audit records
+
+Exit condition: two companions can retain observably different identities, and every prompt edit creates a numbered historical version.
 
 ## Milestone 4: Multi-chat conversation
 
-- Chat and message persistence
-- Streaming route
+Status: **next**
+
+- Chat and message schema
+- Multiple threads under each companion
+- Grok streaming route
 - Abort and retry
+- Branching/edit semantics
 - Automatic titles
 - Current-chat summaries
-- Search
 - Usage records
 
-Exit condition: each companion supports multiple independent conversations across restarts.
+Exit condition: each companion supports multiple independent conversations across application restarts.
 
 ## Milestone 5: Cross-chat memory
 
@@ -61,17 +70,18 @@ Exit condition: each companion supports multiple independent conversations acros
 - Contradiction and supersession handling
 - Forget suppression
 
-Exit condition: a fact from one chat can be correctly recalled in another permitted chat, traced to its source, and genuinely forgotten.
+Exit condition: a fact from one chat can be correctly recalled in another permitted chat, traced to its source, corrected, and genuinely forgotten.
 
 ## Milestone 6: Hardening
 
+- Passkeys or two-factor authentication
+- Password recovery
 - Full export and deletion
 - Provider API-key fallback
 - Backup and restore
 - Memory-quality evaluation set
 - Cross-companion leakage tests
 - Operational metrics
-- Deployment guide
 - Accessibility and mobile review
 
 Exit condition: all acceptance tests in `SPEC.md` pass.
