@@ -41,12 +41,7 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Generate Drizzle migration preview
-        run: npm run db:generate -- --name identity_storage_companions
-
-      - name: Upload migration preview
-        uses: actions/upload-artifact@v6
-        with:
-          name: drizzle-migration-preview
-          path: drizzle
-          if-no-files-found: error
+      - name: Verify Drizzle migration snapshot
+        run: |
+          npm run db:generate -- --name ci_schema_check
+          git diff --exit-code -- drizzle
