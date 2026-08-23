@@ -8,10 +8,16 @@ on:
 permissions:
   contents: read
 
+env:
+  DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/ai_companion
+  BETTER_AUTH_URL: http://127.0.0.1:3000
+  BETTER_AUTH_SECRET: ci-only-secret-not-valid-outside-actions-123456789
+  APP_OWNER_EMAIL: owner@example.com
+
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v6
@@ -29,5 +35,18 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Validate migration runner
+        run: npm run check:migrations
+
       - name: Build
         run: npm run build
+
+      - name: Generate Drizzle migration preview
+        run: npm run db:generate -- --name identity_storage_companions
+
+      - name: Upload migration preview
+        uses: actions/upload-artifact@v6
+        with:
+          name: drizzle-migration-preview
+          path: drizzle
+          if-no-files-found: error
