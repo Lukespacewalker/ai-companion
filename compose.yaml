@@ -1,0 +1,19 @@
+services:
+  app:
+    build:
+      context: .
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      NODE_ENV: production
+      GROK_HOME: /data/grok
+      COMPANION_RUNTIME_DIR: /data/runtime
+      NEXT_TELEMETRY_DISABLED: "1"
+    volumes:
+      - grok-session:/data/grok
+      - companion-runtime:/data/runtime
+    restart: unless-stopped
+
+volumes:
+  grok-session:
+  companion-runtime:
