@@ -1,6 +1,6 @@
 {
   "name": "ai-companion",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "A personal, inspectable AI companion with multiple personas, conversations, and source-backed memory.",
   "scripts": {
@@ -10,24 +10,36 @@
     "start:container": "next start -H 0.0.0.0",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "check": "npm run typecheck && npm run lint && npm run build"
+    "db:generate": "drizzle-kit generate",
+    "db:migrate:auth": "auth migrate --config src/lib/auth.ts --yes",
+    "db:migrate:app": "node scripts/migrate-app.mjs",
+    "db:migrate": "npm run db:migrate:auth && npm run db:migrate:app",
+    "check:migrations": "node --check scripts/migrate-app.mjs",
+    "check": "npm run typecheck && npm run lint && npm run check:migrations && npm run build"
   },
   "dependencies": {
     "@xai-official/grok": "1.0.5",
+    "better-auth": "1.7.1",
+    "drizzle-orm": "0.45.2",
     "next": "16.3.2",
+    "pg": "8.23.0",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "zod": "4.4.3"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "@types/pg": "8.23.1",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "auth": "1.7.1",
+    "drizzle-kit": "0.31.10",
     "eslint": "^9.0.0",
     "eslint-config-next": "16.3.2",
     "typescript": "^5.9.0"
   },
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.12.0"
   },
   "packageManager": "npm@10.9.2"
 }
