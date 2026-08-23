@@ -14,7 +14,8 @@
     "db:migrate:auth": "auth migrate --config src/lib/auth.ts --yes",
     "db:migrate:app": "node scripts/migrate-app.mjs",
     "db:migrate": "npm run db:migrate:auth && npm run db:migrate:app",
-    "check:migrations": "node --check scripts/migrate-app.mjs",
+    "db:smoke": "node scripts/smoke-db.mjs",
+    "check:migrations": "node --check scripts/migrate-app.mjs && node --check scripts/smoke-db.mjs",
     "check": "npm run typecheck && npm run lint && npm run check:migrations && npm run build"
   },
   "dependencies": {
