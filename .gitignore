@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Local runtime data
+.data/
+*.pid
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs and coverage
+*.log
+coverage/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo

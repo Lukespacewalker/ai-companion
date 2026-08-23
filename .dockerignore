@@ -1,0 +1,11 @@
+.git
+.github
+.next
+node_modules
+.data
+*.log
+.env*
+README.md
+SPEC.md
+ROADMAP.md
+docs
