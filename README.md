@@ -1,60 +1,103 @@
 # AI Companion
 
-A personal web application for creating multiple AI companions, keeping many conversations with each companion, and recalling source-backed memories across chats.
+A private web application for creating multiple AI companions, keeping many conversations with each companion, and recalling source-backed memories across chats.
 
 ## Current repository stage
 
-This first foundation implements:
+The application now includes:
 
-- Next.js 16 App Router shell
-- A provider abstraction boundary
-- Official Grok Build device-code OAuth connection
-- Persistent Grok CLI credential storage for self-hosted deployments
-- A safe Grok connection test using ACP
-- Explicit denial of filesystem, terminal, MCP, web-search, subagent, and Grok-native memory features
-- Same-origin checks on provider mutations while full application authentication is pending
-- Docker support with a persistent Grok session volume
-- Product specification, roadmap, and architecture decision record
+- Next.js 16 App Router and strict TypeScript
+- A single-owner application account enforced by `APP_OWNER_EMAIL`
+- Better Auth email/password sessions stored in PostgreSQL
+- PostgreSQL and Drizzle application storage
+- Companion create, edit, archive, and restore workflows
+- Immutable companion system-prompt versions
+- Audit events for companion mutations
+- Official Grok Build device-code OAuth
+- Safe ACP inference with filesystem, terminal, MCP, web-search, subagent, and Grok-native memory features disabled
+- Docker Compose with persistent PostgreSQL and Grok credential volumes
 
-Companion CRUD, chat persistence, PostgreSQL, application login, and the memory engine are intentionally the next milestones. Until application authentication lands, run this only on localhost or behind your own authenticated reverse proxy.
+Persistent chats and cross-chat memory are the next milestones.
 
-## Why Grok OAuth looks different here
+## Authentication boundaries
 
-The xAI inference API uses API keys. Grok Build also offers an official browser/device login backed by OAuth/OIDC. This project uses the official CLI as a black box:
+AI Companion has two separate authentication layers:
 
-1. The server runs `grok login --device-auth`.
-2. The UI displays the verification URL and device code.
-3. Grok Build stores and refreshes its own session under `GROK_HOME`.
-4. The app invokes `grok agent stdio` and selects the CLI's cached-token authentication method.
-5. The app never reads or copies the OAuth tokens.
+1. **Application owner session.** Better Auth protects the UI, companion data, and every application API. Only the normalized email in `APP_OWNER_EMAIL` may perform the one-time account setup or sign in.
+2. **Grok provider session.** The server runs the official `grok login --device-auth` flow and lets Grok Build own its cached OAuth tokens beneath `GROK_HOME`.
 
-This is suitable for one personal Grok account on a persistent Node host. It is not a multi-tenant OAuth integration and it is not suitable for Vercel Functions or other ephemeral serverless runtimes.
+The app never reads or copies Grok OAuth tokens. Connecting Grok does not create an application session, and signing into AI Companion does not connect Grok.
 
 ## Local setup
 
 Prerequisites:
 
-- Node.js 22 or newer
+- Node.js 22.12 or newer
 - npm 10 or newer
-- A Grok account that can authenticate with Grok Build
+- PostgreSQL 16 or newer, with PostgreSQL 18 used by the included Compose file
+- A Grok account with Grok Build access
 
 ```bash
 cp .env.example .env.local
 npm install
+npm run db:migrate
 npm run dev
 ```
 
-Open `http://127.0.0.1:3000/settings/providers`, select **Connect Grok**, and finish the device-code flow.
+Set at least these values before migration:
 
-Runtime credentials and temporary files are stored below `.data/` by default and are ignored by Git.
+```env
+DATABASE_URL=postgresql://ai_companion:ai_companion@127.0.0.1:5432/ai_companion
+BETTER_AUTH_URL=http://127.0.0.1:3000
+BETTER_AUTH_SECRET=replace-with-a-unique-random-secret-of-at-least-32-characters
+APP_OWNER_EMAIL=you@example.com
+```
+
+Then:
+
+1. Open `http://127.0.0.1:3000/sign-in`.
+2. Create the one permitted owner account.
+3. Open **Providers** and complete Grok device authorization.
+4. Open **Companions** and create distinct companion identities.
+
+Public registration is not supported. If the database already contains a different user than `APP_OWNER_EMAIL`, setup deliberately stops rather than guessing which account owns the deployment.
 
 ## Docker setup
+
+Create a `.env` file containing a strong `BETTER_AUTH_SECRET`, your `APP_OWNER_EMAIL`, and optionally a stronger `POSTGRES_PASSWORD`, then run:
 
 ```bash
 docker compose up --build
 ```
 
-Open `http://127.0.0.1:3000`. The compose file binds only to loopback and persists Grok's session in a named Docker volume.
+The application waits for PostgreSQL, applies Better Auth and Drizzle migrations, and binds only to `127.0.0.1:3000` by default.
+
+Persistent volumes retain:
+
+- PostgreSQL data
+- Grok Build OAuth session data
+- The isolated Grok runtime workspace
+
+## Companion behavior
+
+Each companion currently stores:
+
+- Name, description, and optional avatar URL
+- Preferred Grok model identifier
+- Response style
+- Memory mode and memory instructions
+- Active system prompt version
+- Archive state
+
+Changing the system prompt appends a new immutable version. Existing versions remain inspectable and can later be referenced by individual assistant messages.
+
+Memory modes are:
+
+- `isolated`: companion-only memory
+- `shared_profile`: global user profile plus companion-specific memory
+- `shared_all`: all explicitly permitted companion memories
+
+The memory engine is not implemented yet; these settings define the policy boundary that the later retrieval layer must obey.
 
 ## Useful commands
 
@@ -64,22 +107,29 @@ npm run typecheck
 npm run lint
 npm run build
 npm run check
+npm run db:generate
+npm run db:migrate
 ```
+
+`npm run db:migrate` first applies Better Auth migrations, then applies committed Drizzle migrations.
 
 ## Deployment modes
 
 | Mode | Grok authentication | Host requirement | Intended use |
 |---|---|---|---|
-| Self-hosted personal | Official CLI device OAuth | Persistent Node process and disk | Primary MVP |
-| Cloud application | xAI API key or user-supplied encrypted key | Any supported Node host | Later |
-| Multi-user OAuth | Not implemented | Requires a public xAI app integration | Do not claim support |
+| Self-hosted personal | Official CLI device OAuth | Persistent Node process, child processes, disk, PostgreSQL | Primary MVP |
+| Cloud application | xAI API key or encrypted user key | Conventional Node host | Later |
+| Multi-user xAI OAuth | Not implemented | Requires a public xAI app contract | Do not claim support |
+
+The CLI OAuth mode is not suitable for Vercel Functions or other ephemeral serverless runtimes.
 
 ## Documents
 
-- [`SPEC.md`](./SPEC.md): MVP product and technical specification
+- [`SPEC.md`](./SPEC.md): MVP product and technical contract
 - [`ROADMAP.md`](./ROADMAP.md): staged implementation plan
 - [`docs/adr/0001-grok-auth-and-deployment.md`](./docs/adr/0001-grok-auth-and-deployment.md): Grok OAuth and hosting decision
+- [`docs/adr/0002-identity-storage-and-companions.md`](./docs/adr/0002-identity-storage-and-companions.md): owner identity, PostgreSQL, and prompt versioning
 
 ## Security status
 
-This branch establishes a safer provider boundary, but it does **not** yet include application authentication. Do not expose it directly to the public internet.
+The application now requires the configured owner session and revalidates it inside data and provider APIs. Keep the service on loopback or behind an authenticated reverse proxy until rate-limit persistence, backup procedures, account recovery, and full operational hardening are complete.

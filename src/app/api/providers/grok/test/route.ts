@@ -1,5 +1,11 @@
 import { grokProvider } from "@/lib/grok/provider";
-import { assertTrustedMutationOrigin, errorResponse } from "@/lib/http";
+import {
+  assertTrustedMutationOrigin,
+  errorResponse,
+  HttpError,
+  readJson,
+} from "@/lib/http";
+import { requireOwnerRequest } from "@/lib/owner";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,26 +19,26 @@ const TEST_SYSTEM_PROMPT = [
 export async function POST(request: Request) {
   try {
     assertTrustedMutationOrigin(request);
-    const body = (await request.json().catch(() => ({}))) as {
-      prompt?: unknown;
-    };
+    await requireOwnerRequest(request);
+
+    const body = await readJson(request);
     const prompt =
-      typeof body.prompt === "string"
-        ? body.prompt.trim().slice(0, 500)
+      body && typeof body === "object" && "prompt" in body
+        ? String(body.prompt || "").trim()
         : "";
 
-    if (!prompt) {
-      return Response.json(
-        { error: "A short test prompt is required." },
-        { status: 400 },
+    if (!prompt || prompt.length > 500) {
+      throw new HttpError(
+        "Prompt must contain between 1 and 500 characters.",
+        400,
       );
     }
 
     const providerStatus = await grokProvider.status();
     if (!providerStatus.authenticated) {
-      return Response.json(
-        { error: "Connect Grok before sending a test message." },
-        { status: 409 },
+      throw new HttpError(
+        "Connect Grok before sending a test message.",
+        409,
       );
     }
 
@@ -44,11 +50,7 @@ export async function POST(request: Request) {
 
     return Response.json(
       { text: result.text },
-      {
-        headers: {
-          "Cache-Control": "no-store",
-        },
-      },
+      { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {
     return errorResponse(error);

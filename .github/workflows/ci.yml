@@ -8,10 +8,31 @@ on:
 permissions:
   contents: read
 
+env:
+  DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/ai_companion
+  BETTER_AUTH_URL: http://127.0.0.1:3000
+  BETTER_AUTH_SECRET: ci-only-secret-not-valid-outside-actions-123456789
+  APP_OWNER_EMAIL: owner@example.com
+
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: ai_companion
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d ai_companion"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
 
     steps:
       - uses: actions/checkout@v6
@@ -29,5 +50,19 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Validate migration scripts
+        run: npm run check:migrations
+
       - name: Build
         run: npm run build
+
+      - name: Verify Drizzle migration snapshot
+        run: |
+          npm run db:generate -- --name ci_schema_check
+          git diff --exit-code -- drizzle
+
+      - name: Apply database migrations
+        run: npm run db:migrate
+
+      - name: Smoke-test migrated database
+        run: npm run db:smoke

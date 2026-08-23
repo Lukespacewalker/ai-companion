@@ -16,7 +16,8 @@ export default async function ProvidersPage() {
         <h1>Connect Grok</h1>
         <p>
           The OAuth-first mode delegates browser login, token storage, and refresh to
-          the official Grok Build runtime.
+          the official Grok Build runtime. Application authentication now shields
+          every provider operation.
         </p>
       </section>
 
