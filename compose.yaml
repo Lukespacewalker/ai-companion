@@ -1,19 +1,42 @@
 services:
-  app:
-    build:
-      context: .
-    ports:
-      - "127.0.0.1:3000:3000"
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
     environment:
-      NODE_ENV: production
+      POSTGRES_DB: ai_companion
+      POSTGRES_USER: ai_companion
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ai_companion}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ai_companion -d ai_companion"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["sh", "-c", "npm run db:migrate && npm run start:container"]
+    environment:
+      DATABASE_URL: postgresql://ai_companion:${POSTGRES_PASSWORD:-ai_companion}@db:5432/ai_companion
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://127.0.0.1:3000}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      APP_OWNER_EMAIL: ${APP_OWNER_EMAIL}
       GROK_HOME: /data/grok
       COMPANION_RUNTIME_DIR: /data/runtime
+      XAI_API_KEY: ${XAI_API_KEY:-}
       NEXT_TELEMETRY_DISABLED: "1"
+    ports:
+      - "127.0.0.1:3000:3000"
     volumes:
       - grok-session:/data/grok
       - companion-runtime:/data/runtime
-    restart: unless-stopped
 
 volumes:
+  postgres-data:
   grok-session:
   companion-runtime:
