@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
 import { GrokProviderCard } from "@/components/grok-provider-card";
+import { grokProvider } from "@/lib/grok/provider";
 
 export const metadata: Metadata = { title: "Providers" };
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-export default function ProvidersPage() {
+export default async function ProvidersPage() {
+  const initialProvider = await grokProvider.status();
+
   return (
     <div className="page-stack narrow">
       <section className="page-heading">
@@ -15,7 +20,7 @@ export default function ProvidersPage() {
         </p>
       </section>
 
-      <GrokProviderCard />
+      <GrokProviderCard initialProvider={initialProvider} />
 
       <section className="info-panel">
         <h2>Hosting boundary</h2>

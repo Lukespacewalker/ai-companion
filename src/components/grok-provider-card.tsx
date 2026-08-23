@@ -41,9 +41,15 @@ function stateLabel(state?: GrokProviderStatus["state"]): string {
   }[state ?? "signed-out"];
 }
 
-export function GrokProviderCard() {
-  const [provider, setProvider] = useState<GrokProviderStatus | null>(null);
-  const [login, setLogin] = useState<GrokDeviceLoginSnapshot | null>(null);
+export function GrokProviderCard({
+  initialProvider,
+}: {
+  initialProvider: GrokProviderStatus;
+}) {
+  const [provider, setProvider] = useState<GrokProviderStatus>(initialProvider);
+  const [login, setLogin] = useState<GrokDeviceLoginSnapshot | null>(
+    initialProvider.login ?? null,
+  );
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
@@ -63,17 +69,13 @@ export function GrokProviderCard() {
   }, []);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
-
-  useEffect(() => {
-    if (provider?.state !== "authorizing") {
+    if (provider.state !== "authorizing") {
       return;
     }
 
     const timer = window.setInterval(() => void refresh(), 1_800);
     return () => window.clearInterval(timer);
-  }, [provider?.state, refresh]);
+  }, [provider.state, refresh]);
 
   async function perform(action: () => Promise<void>) {
     setBusy(true);
@@ -152,7 +154,7 @@ export function GrokProviderCard() {
     setNotice("Device code copied.");
   }
 
-  const ready = provider?.state === "ready";
+  const ready = provider.state === "ready";
 
   return (
     <section className="provider-card" aria-live="polite">
@@ -164,9 +166,9 @@ export function GrokProviderCard() {
             <p>Official device login through <code>@xai-official/grok</code></p>
           </div>
         </div>
-        <span className={`state-chip ${provider?.state ?? "loading"}`}>
+        <span className={`state-chip ${provider.state}`}>
           <i />
-          {provider ? stateLabel(provider.state) : "Checking"}
+          {stateLabel(provider.state)}
         </span>
       </header>
 
@@ -176,16 +178,16 @@ export function GrokProviderCard() {
         <div>
           <dt>Models</dt>
           <dd>
-            {provider?.models.length
+            {provider.models.length
               ? provider.models.slice(0, 4).join(", ")
               : "Available after connection"}
           </dd>
         </div>
       </dl>
 
-      {provider?.detail ? <p className="provider-detail">{provider.detail}</p> : null}
+      {provider.detail ? <p className="provider-detail">{provider.detail}</p> : null}
 
-      {login?.verificationUrl && provider?.state === "authorizing" ? (
+      {login?.verificationUrl && provider.state === "authorizing" ? (
         <div className="device-panel">
           <div>
             <span>Device code</span>
@@ -222,7 +224,7 @@ export function GrokProviderCard() {
         ) : (
           <button
             className="button primary"
-            disabled={busy || provider?.state === "unavailable"}
+            disabled={busy || provider.state === "unavailable"}
             onClick={connect}
             type="button"
           >

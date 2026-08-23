@@ -3,7 +3,6 @@ import { getGrokEnvironment } from "./runtime";
 import type { GrokBinary } from "./binary";
 
 const ANSI_PATTERN =
-  // eslint-disable-next-line no-control-regex
   /[\u001B\u009B][[\]()#;?]*(?:(?:(?:[a-zA-Z\d]*(?:;[-a-zA-Z\d/#&.:=?%@~_]+)*)?\u0007)|(?:(?:\d{1,4}(?:[;:]\d{0,4})*)?[\dA-PR-TZcf-nq-uy=><~]))/g;
 
 export interface GrokCommandResult {
@@ -31,14 +30,12 @@ export async function runGrokCommand(
 
     let output = "";
     let settled = false;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-
     const finish = (result: GrokCommandResult) => {
       if (settled) {
         return;
       }
       settled = true;
-      if (timer) clearTimeout(timer);
+      clearTimeout(timer);
       resolve({ ...result, output: stripAnsi(result.output).trim() });
     };
 
@@ -62,7 +59,7 @@ export async function runGrokCommand(
       finish({ code, output, timedOut: false });
     });
 
-    timer = setTimeout(() => {
+    const timer = setTimeout(() => {
       child.kill();
       finish({ code: null, output, timedOut: true });
     }, timeoutMs);
